@@ -626,7 +626,6 @@ export default {
       }
     },
     async downloadSVGAsPNG() {
-      alert("Download button clicked!"); // Direct feedback
       try {
         const svg = document.getElementById("face-svg");
         const svgData = new XMLSerializer().serializeToString(svg);
