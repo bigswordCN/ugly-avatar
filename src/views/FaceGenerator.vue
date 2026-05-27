@@ -625,7 +625,7 @@ export default {
         );
       }
     },
-    downloadSVGAsPNG() {
+    async downloadSVGAsPNG() {
       // download our svg as png
       const svg = document.getElementById("face-svg");
       const svgData = new XMLSerializer().serializeToString(svg);
@@ -635,15 +635,49 @@ export default {
       const svgSize = svg.getBoundingClientRect();
       canvas.width = svgSize.width;
       canvas.height = svgSize.height;
-      img.setAttribute("src", "data:image/svg+xml;base64," + btoa(svgData));
-      img.onload = function () {
-        ctx.drawImage(img, 0, 0);
+
+      const loadImage = () =>
+        new Promise((resolve) => {
+          img.onload = () => resolve();
+          img.setAttribute("src", "data:image/svg+xml;base64," + btoa(svgData));
+        });
+
+      await loadImage();
+      ctx.drawImage(img, 0, 0);
+      const dataUrl = canvas.toDataURL("image/png");
+
+      // Check if running in Tauri
+      if (window.__TAURI_INTERNALS__) {
+        try {
+          const { save } = await import("@tauri-apps/plugin-dialog");
+          const { writeFile } = await import("@tauri-apps/plugin-fs");
+
+          const filePath = await save({
+            filters: [
+              {
+                name: "Image",
+                extensions: ["png"],
+              },
+            ],
+            defaultPath: "face.png",
+          });
+
+          if (filePath) {
+            const response = await fetch(dataUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+            await writeFile(filePath, uint8Array);
+          }
+        } catch (err) {
+          console.error("Failed to save via Tauri:", err);
+        }
+      } else {
         const a = document.createElement("a");
         const e = new MouseEvent("click");
         a.download = "face.png";
-        a.href = canvas.toDataURL("image/png");
+        a.href = dataUrl;
         a.dispatchEvent(e);
-      };
+      }
     },
   },
   mounted() {
