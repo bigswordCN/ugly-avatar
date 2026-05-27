@@ -626,64 +626,64 @@ export default {
       }
     },
     async downloadSVGAsPNG() {
-      // download our svg as png
-      const svg = document.getElementById("face-svg");
-      const svgData = new XMLSerializer().serializeToString(svg);
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      const img = document.createElement("img");
-      const svgSize = svg.getBoundingClientRect();
-      canvas.width = svgSize.width;
-      canvas.height = svgSize.height;
+      alert("Download button clicked!"); // Direct feedback
+      try {
+        const svg = document.getElementById("face-svg");
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const img = document.createElement("img");
+        const svgSize = svg.getBoundingClientRect();
+        canvas.width = svgSize.width;
+        canvas.height = svgSize.height;
 
-      const loadImage = () =>
-        new Promise((resolve) => {
-          img.onload = () => resolve();
-          img.setAttribute("src", "data:image/svg+xml;base64," + btoa(svgData));
-        });
-
-      await loadImage();
-      ctx.drawImage(img, 0, 0);
-      const dataUrl = canvas.toDataURL("image/png");
-
-      // Check if running in Tauri
-      if (window.__TAURI_INTERNALS__) {
-        try {
-          const { save } = await import("@tauri-apps/plugin-dialog");
-          const { writeFile } = await import("@tauri-apps/plugin-fs");
-
-          const filePath = await save({
-            filters: [
-              {
-                name: "Image",
-                extensions: ["png"],
-              },
-            ],
-            defaultPath: "face.png",
+        const loadImage = () =>
+          new Promise((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = (e) => reject(e);
+            // Use encodeURIComponent to handle non-ASCII characters in SVG
+            const base64 = window.btoa(unescape(encodeURIComponent(svgData)));
+            img.setAttribute("src", "data:image/svg+xml;base64," + base64);
           });
 
-          if (filePath) {
-            // Convert dataUrl to Uint8Array
-            const base64Data = dataUrl.split(",")[1];
-            const binaryString = window.atob(base64Data);
-            const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-              bytes[i] = binaryString.charCodeAt(i);
+        await loadImage();
+        ctx.drawImage(img, 0, 0);
+        const dataUrl = canvas.toDataURL("image/png");
+
+        // Check if running in Tauri (v2 uses window.__TAURI_INTERNALS__ or check for the plugin)
+        const isTauri = !!(window.__TAURI_INTERNALS__ || window.__TAURI__);
+
+        if (isTauri) {
+          try {
+            const { save } = await import("@tauri-apps/plugin-dialog");
+            const { writeFile } = await import("@tauri-apps/plugin-fs");
+
+            const filePath = await save({
+              filters: [{ name: "Image", extensions: ["png"] }],
+              defaultPath: "face.png",
+            });
+
+            if (filePath) {
+              const base64Data = dataUrl.split(",")[1];
+              const binaryString = window.atob(base64Data);
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
+              await writeFile(filePath, bytes);
+              alert("Save successful!");
             }
-            await writeFile(filePath, bytes);
-            alert("Save successful!");
+          } catch (err) {
+            alert("Tauri save error: " + err);
           }
-        } catch (err) {
-          console.error("Failed to save via Tauri:", err);
-          alert("Save failed: " + err);
+        } else {
+          const a = document.createElement("a");
+          a.download = "face.png";
+          a.href = dataUrl;
+          a.click();
         }
-      } else {
-        const a = document.createElement("a");
-        const e = new MouseEvent("click");
-        a.download = "face.png";
-        a.href = dataUrl;
-        a.dispatchEvent(e);
+      } catch (err) {
+        alert("General error: " + err);
       }
     },
   },
