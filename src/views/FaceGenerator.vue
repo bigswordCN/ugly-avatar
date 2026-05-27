@@ -672,9 +672,11 @@ export default {
               bytes[i] = binaryString.charCodeAt(i);
             }
             await writeFile(filePath, bytes);
+            alert("Save successful!");
           }
         } catch (err) {
           console.error("Failed to save via Tauri:", err);
+          alert("Save failed: " + err);
         }
       } else {
         const a = document.createElement("a");

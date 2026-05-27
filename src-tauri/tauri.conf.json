@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Ugly Avatar",
         "width": 620,
         "height": 700,
