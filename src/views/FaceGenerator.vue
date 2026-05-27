@@ -663,10 +663,15 @@ export default {
           });
 
           if (filePath) {
-            const response = await fetch(dataUrl);
-            const arrayBuffer = await response.arrayBuffer();
-            const uint8Array = new Uint8Array(arrayBuffer);
-            await writeFile(filePath, uint8Array);
+            // Convert dataUrl to Uint8Array
+            const base64Data = dataUrl.split(",")[1];
+            const binaryString = window.atob(base64Data);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            await writeFile(filePath, bytes);
           }
         } catch (err) {
           console.error("Failed to save via Tauri:", err);

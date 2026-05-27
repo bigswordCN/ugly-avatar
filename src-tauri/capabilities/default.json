@@ -5,6 +5,15 @@
   "permissions": [
     "core:default",
     "dialog:default",
-    "fs:default"
+    "fs:allow-write",
+    "fs:allow-read",
+    "fs:allow-exists",
+    "fs:allow-metadata",
+    "fs:allow-desktop-write-recursive",
+    "fs:allow-desktop-read-recursive",
+    "fs:allow-download-write-recursive",
+    "fs:allow-download-read-recursive",
+    "fs:allow-documents-write-recursive",
+    "fs:allow-documents-read-recursive"
   ]
 }
