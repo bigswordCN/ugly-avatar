@@ -4,12 +4,15 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build"
+    "build": "vue-cli-service build",
+    "build:tauri": "node scripts/build-tauri.cjs",
+    "tauri": "tauri"
   },
   "dependencies": {
     "vue": "^3.2.13"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
     "@vue/cli-service": "~5.0.0"
   },
   "browserslist": [
