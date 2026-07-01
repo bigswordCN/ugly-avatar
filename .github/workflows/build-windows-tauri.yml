@@ -44,17 +44,22 @@ jobs:
           New-Item -ItemType Directory -Force -Path $outDir | Out-Null
           Copy-Item "src-tauri/target/release/ugly-avatar.exe" (Join-Path $outDir "ugly-avatar.exe") -Force
 
-          $installerPath = Join-Path $env:TEMP "WebView2RuntimeInstallerX64.exe"
-          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile $installerPath
-          Start-Process -FilePath $installerPath -ArgumentList "/install","/silent","/norestart" -Wait
+          $webView2Version = "142.0.3595.80"
+          $nupkgPath = Join-Path $env:TEMP "WebView2.Runtime.X64.$webView2Version.nupkg"
+          Invoke-WebRequest -Uri "https://www.nuget.org/api/v2/package/WebView2.Runtime.X64/$webView2Version" -OutFile $nupkgPath
 
-          $webview2AppDir = Join-Path ${env:ProgramFiles(x86)} "Microsoft\EdgeWebView\Application"
-          $versionDir = Get-ChildItem $webview2AppDir -Directory | Sort-Object Name | Select-Object -Last 1
-          if (-not $versionDir) { throw "WebView2 runtime not found at $webview2AppDir" }
+          $extractDir = Join-Path $env:TEMP "webview2-runtime-extract"
+          if (Test-Path $extractDir) { Remove-Item $extractDir -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
+          Expand-Archive -Path $nupkgPath -DestinationPath $extractDir -Force
+
+          $runtimeExe = Get-ChildItem $extractDir -Recurse -Filter "msedgewebview2.exe" | Select-Object -First 1
+          if (-not $runtimeExe) { throw "msedgewebview2.exe not found in extracted WebView2 runtime package" }
+          $runtimeSourceDir = $runtimeExe.Directory.FullName
 
           $runtimeDest = Join-Path $outDir "WebView2Runtime"
           New-Item -ItemType Directory -Force -Path $runtimeDest | Out-Null
-          Copy-Item (Join-Path $versionDir.FullName "*") $runtimeDest -Recurse -Force
+          Copy-Item (Join-Path $runtimeSourceDir "*") $runtimeDest -Recurse -Force
 
           Compress-Archive -Path "$outDir\*" -DestinationPath "ugly-avatar-windows-portable.zip" -Force
 
