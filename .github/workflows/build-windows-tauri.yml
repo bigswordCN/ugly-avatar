@@ -1,43 +1,51 @@
-name: Build Windows Tauri App
+name: Build Tauri (Windows)
 
 on:
-  workflow_dispatch:
   push:
-    tags:
-      - "v*"
+    branches: [ main ]
+  workflow_dispatch: {}
 
 jobs:
   build-windows:
-    name: Build Windows app
+    name: Build Windows installers
     runs-on: windows-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 24
-          cache: npm
+          node-version: '18'
 
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+      - name: Setup Rust (stable)
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
 
-      - name: Install frontend dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Build Tauri Windows artifacts
-        uses: tauri-apps/tauri-action@v0
+      - name: Ensure WebView2 bootstrapper
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          uploadWorkflowArtifacts: true
-          workflowArtifactNamePattern: ugly-avatar-[platform]-[arch]-[bundle]
+          WEBVIEW2_BOOTSTRAPPER_URL: ${{ secrets.WEBVIEW2_BOOTSTRAPPER_URL }}
+        shell: powershell
+        run: |
+          $url = $env:WEBVIEW2_BOOTSTRAPPER_URL
+          if (-not $url) { $url = 'https://go.microsoft.com/fwlink/p/?LinkId=2124703' }
+          Write-Host "Downloading WebView2 bootstrapper from: $url"
+          New-Item -ItemType Directory -Force -Path src-tauri\webview2 | Out-Null
+          Invoke-WebRequest -Uri $url -OutFile src-tauri\webview2\MicrosoftEdgeWebView2InstallerX64.exe -UseBasicParsing
 
-      - name: Upload portable executable
+      - name: Build frontend (Vue)
+        run: npm run build:tauri
+
+      - name: Build Tauri (Windows bundle)
+        run: npx tauri build --target x86_64-pc-windows-msvc --release
+
+      - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
-          name: ugly-avatar-windows-portable-exe
-          path: src-tauri/target/release/ugly-avatar.exe
-          if-no-files-found: warn
+          name: tauri-windows-bundles
+          path: src-tauri/target/release/bundle/**
