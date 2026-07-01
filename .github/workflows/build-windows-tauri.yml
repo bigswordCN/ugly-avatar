@@ -35,9 +35,32 @@ jobs:
           args: --no-bundle
           uploadWorkflowArtifacts: false
 
-      - name: Upload Tauri exe
+      - name: Build portable package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $outDir = "ugly-avatar-windows-portable"
+          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+          Copy-Item "src-tauri/target/release/ugly-avatar.exe" (Join-Path $outDir "ugly-avatar.exe") -Force
+
+          $installerPath = Join-Path $env:TEMP "WebView2RuntimeInstallerX64.exe"
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile $installerPath
+          Start-Process -FilePath $installerPath -ArgumentList "/install","/silent","/norestart" -Wait
+
+          $webview2AppDir = Join-Path ${env:ProgramFiles(x86)} "Microsoft\EdgeWebView\Application"
+          $versionDir = Get-ChildItem $webview2AppDir -Directory | Sort-Object Name | Select-Object -Last 1
+          if (-not $versionDir) { throw "WebView2 runtime not found at $webview2AppDir" }
+
+          $runtimeDest = Join-Path $outDir "WebView2Runtime"
+          New-Item -ItemType Directory -Force -Path $runtimeDest | Out-Null
+          Copy-Item (Join-Path $versionDir.FullName "*") $runtimeDest -Recurse -Force
+
+          Compress-Archive -Path "$outDir\*" -DestinationPath "ugly-avatar-windows-portable.zip" -Force
+
+      - name: Upload portable package
         uses: actions/upload-artifact@v4
         with:
-          name: ugly-avatar-windows-exe
-          path: src-tauri/target/release/ugly-avatar.exe
+          name: ugly-avatar-windows-portable
+          path: ugly-avatar-windows-portable.zip
           retention-days: 30
