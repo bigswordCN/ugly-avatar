@@ -28,9 +28,6 @@
   "bundle": {
     "active": true,
     "targets": ["nsis", "msi"],
-    "resources": [
-      "webview2/MicrosoftEdgeWebView2InstallerX64.exe"
-    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -41,10 +38,9 @@
     "publisher": "Xuan Tang",
     "copyright": "Copyright (c) 2026 Xuan Tang",
     "windows": {
-      "nsis": {
-        "displayLanguageSelector": true,
-        "installMode": "currentUser",
-        "script": "installer.nsh"
+      "webviewInstallMode": {
+        "type": "offlineInstaller",
+        "silent": true
       }
     }
   }

@@ -34,10 +34,3 @@ jobs:
         with:
           uploadWorkflowArtifacts: true
           workflowArtifactNamePattern: ugly-avatar-[platform]-[arch]-[bundle]
-
-      - name: Upload portable executable
-        uses: actions/upload-artifact@v4
-        with:
-          name: ugly-avatar-windows-portable-exe
-          path: src-tauri/target/release/ugly-avatar.exe
-          if-no-files-found: warn
