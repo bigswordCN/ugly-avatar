@@ -32,5 +32,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          uploadWorkflowArtifacts: true
-          workflowArtifactNamePattern: ugly-avatar-[platform]-[arch]-[bundle]
+          uploadWorkflowArtifacts: false
+
+      - name: Upload Tauri bundles
+        uses: actions/upload-artifact@v4
+        with:
+          name: ugly-avatar-windows-bundles
+          path: src-tauri/target/release/bundle/
+          retention-days: 30
