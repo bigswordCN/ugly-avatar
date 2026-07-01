@@ -32,11 +32,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          args: --no-bundle
           uploadWorkflowArtifacts: false
 
-      - name: Upload Tauri bundles
+      - name: Upload Tauri exe
         uses: actions/upload-artifact@v4
         with:
-          name: ugly-avatar-windows-bundles
-          path: src-tauri/target/release/bundle/
+          name: ugly-avatar-windows-exe
+          path: src-tauri/target/release/ugly-avatar.exe
           retention-days: 30
